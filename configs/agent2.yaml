@@ -1,0 +1,63 @@
+# OceanTrace — Agent 2: Hindcasting & Forecasting Configuration
+version: "2.0.0"
+
+hindcast:
+  enabled: true
+  max_lookback_hours: 48
+  time_step_hours: 6
+  cross_track_samples: 3
+  particles_per_candidate: 150
+  timestep_minutes: 20.0
+
+forecast:
+  enabled: true
+  horizons_hours:
+    - 6
+    - 12
+    - 24
+  particle_count: 500
+  ensemble_size: 15
+  timestep_minutes: 15.0
+
+simulation:
+  integration_method: "rk4"  # 'rk4' or 'euler'
+  use_opendrift_if_available: true
+
+oil:
+  category: "medium_crude"  # 'light_crude', 'medium_crude', 'heavy_crude', 'diesel'
+
+windage:
+  enabled: true
+  percentage: 0.030
+  uncertainty:
+    enabled: true
+    min: 0.025
+    max: 0.044
+
+scoring:
+  centroid_weight: 0.35
+  iou_weight: 0.35
+  area_weight: 0.15
+  shape_weight: 0.15
+  centroid_sigma_km: 3.5
+
+forcing:
+  # Mode: 'mock', 'cmems', 'era5', or 'composite'
+  provider: "mock"
+  mock:
+    mode: "uniform"          # 'uniform', 'gyre', 'shear', or 'tidal'
+    current_u: 0.25          # m/s eastward
+    current_v: 0.15          # m/s northward
+    wind_u: 4.0              # m/s 10m eastward wind
+    wind_v: 2.0              # m/s 10m northward wind
+    gyre_center: [80.0, 15.0]
+    gyre_radius_km: 40.0
+    gyre_max_speed: 0.5
+  cmems:
+    dataset_path: null
+    product_id: "GLOBAL_ANALYSISFORECAST_PHY_001_024"
+  era5:
+    dataset_path: null
+
+reproducibility:
+  seed: 42
