@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+models/checkpoints/
+outputs/
+data/raw/
+data/cache/
+data/sample/
+.DS_Store
+node_modules/
+dist/
+.next/
+.pnpm-store/
+.env
+scratch/
+*.pth
