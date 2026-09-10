@@ -3,6 +3,8 @@ import io
 import os
 import sys
 import time
+import re
+from datetime import datetime
 
 import numpy as np
 from scipy.ndimage import binary_dilation
@@ -85,6 +87,46 @@ async def load_model():
     model.eval()
     model_state["model"] = model
     print(f"Model loaded successfully on {device}. Threshold: {th}")
+
+def extract_acquisition_time(filename: str, filepath: str) -> str:
+    """Extract SAR acquisition start time from filename or metadata."""
+    filename = filename or ""
+    # 1. Filename extraction (Primary)
+    # Match pattern: YYYYMMDDTHHMMSS
+    match = re.search(r"(\d{8}T\d{6})", filename)
+    if match:
+        try:
+            dt = datetime.strptime(match.group(1), "%Y%m%dT%H%M%S")
+            return dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+        except ValueError:
+            pass
+
+    # 2. Metadata fallback
+    if filepath and filepath.lower().endswith(('.tif', '.tiff', '.gtiff')):
+        try:
+            import rasterio
+            with rasterio.open(filepath) as src:
+                # Common tag format in TIFF: "YYYY:MM:DD HH:MM:SS" or "YYYY-MM-DD HH:MM:SS"
+                tags = src.tags()
+                time_str = tags.get("TIFFTAG_DATETIME") or tags.get("DATETIME") or tags.get("ACQUISITION_DATETIME")
+                if time_str:
+                    time_clean = time_str.strip()[:19]
+                    for fmt in (
+                        "%Y:%m:%d %H:%M:%S",
+                        "%Y-%m-%d %H:%M:%S",
+                        "%Y-%m-%dT%H:%M:%S",
+                        "%Y%m%dT%H%M%S",
+                    ):
+                        try:
+                            dt = datetime.strptime(time_clean, fmt)
+                            return dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+                        except ValueError:
+                            continue
+        except Exception:
+            pass
+            
+    # 3. Graceful fallback
+    return "Acquisition time unavailable"
 
 def encode_image_base64(img_array: np.ndarray) -> str:
     """Convert numpy array (H, W, C) or (H, W) to base64 PNG."""
@@ -206,6 +248,8 @@ async def predict(file: UploadFile = File(...)):
         mean_conf = float(np.mean(positive_probs)) if len(positive_probs) > 0 else 0.0
 
         inference_time_ms = int((time.time() - start_time) * 1000)
+        
+        acquisition_time = extract_acquisition_time(file.filename, temp_path)
 
         return {
             "success": True,
@@ -224,7 +268,8 @@ async def predict(file: UploadFile = File(...)):
             "metadata": {
                 "model_name": model_state["config"]["model"].get("architecture", "unet"),
                 "threshold": threshold,
-                "checkpoint": os.path.basename(model_state["config"]["training"].get("best_model_path", ""))
+                "checkpoint": os.path.basename(model_state["config"]["training"].get("best_model_path", "")),
+                "acquisition_time": acquisition_time
             }
         }
         
@@ -233,3 +278,7 @@ async def predict(file: UploadFile = File(...)):
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
+
+# Import and include the v2 router
+from backend.api_v2 import router as v2_router
+app.include_router(v2_router, prefix="/api/v2")

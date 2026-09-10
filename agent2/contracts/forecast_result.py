@@ -81,3 +81,15 @@ class ForecastResult(BaseModel):
     diagnostics: dict[str, Any] = Field(
         default_factory=dict, description="Forecast simulation parameters and execution diagnostics"
     )
+    animation_frames: list[dict[str, Any]] | None = Field(
+        default=None, description="Frames for forward particle animation"
+    )
+    weathering_timeseries: list[dict[str, Any]] | None = Field(
+        default=None, description="Oil weathering curve data from OpenDrift"
+    )
+    engine_used: str | None = Field(
+        default=None, description="Physics engine used (rk4_native or opendrift_openoil)"
+    )
+    opendrift_available: bool = Field(
+        default=False, description="Whether OpenDrift was available during run"
+    )

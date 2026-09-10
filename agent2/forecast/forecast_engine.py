@@ -5,7 +5,7 @@ Executes multi-horizon forward dispersion simulations with ensemble perturbation
 
 from datetime import datetime, timedelta
 import math
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
 from agent2.adapters.forcing_base import EnvironmentalForcingProvider
@@ -190,11 +190,56 @@ class ForecastingEngine:
                 beached_particle_ratio=0.0
             ))
 
+        # Run OpenDrift Forward simulation for animation frames and weathering
+        from agent2.physics.opendrift_wrapper import OpenDriftEngineWrapper
+        wrapper = OpenDriftEngineWrapper(
+            forcing_provider=self.forcing,
+            oil_props=self.oil_props,
+            timestep_minutes=self.timestep_minutes,
+            seed=self.seed
+        )
+        # Use full cloud for the open drift run
+        od_cloud = ParticleCloud.from_polygon(
+            polygon_geom=spill.geometry,
+            num_particles=self.particle_count,
+            seed=self.seed
+        )
+        sim_out = wrapper.run_transport(
+            cloud=od_cloud,
+            start_time=obs_time,
+            end_time=horizon_timestamps[max_horizon_hours],
+            apply_diffusion=True,
+            reverse=False
+        )
+
+        frames_dict = []
+        for frame in sim_out.frames:
+            frames_dict.append({
+                "t": frame.timestamp.isoformat() + "Z",
+                "phase": "forecast",
+                "particles": [[lon, lat] for lon, lat, active in zip(frame.lons, frame.lats, frame.active) if active]
+            })
+            
+        weathering_list = None
+        if sim_out.weathering_timeseries:
+            weathering_list = []
+            for w in sim_out.weathering_timeseries:
+                weathering_list.append({
+                    "t": w.timestamp.isoformat() + "Z",
+                    "evaporated_fraction": w.evaporated_fraction,
+                    "water_content": w.water_content,
+                    "surface_oil_fraction": w.surface_oil_fraction
+                })
+
         return ForecastResult(
             enabled=True,
             status="SUCCESS",
             horizons=horizon_results,
             ensemble_trajectories=ensemble_trajectories,
+            animation_frames=frames_dict,
+            weathering_timeseries=weathering_list,
+            engine_used=sim_out.engine_used,
+            opendrift_available=wrapper.opendrift_available,
             diagnostics={
                 "particle_count_total": sum(len(pair[0]) for pair in horizon_particles[self.horizons_hours[0]]),
                 "ensemble_size": len(members),
@@ -203,3 +248,4 @@ class ForecastingEngine:
                 "oil_category": self.oil_props.category.value
             }
         )
+

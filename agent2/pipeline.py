@@ -254,9 +254,9 @@ class Agent2Pipeline:
 
         return result
 
-    def export_artifacts(self, result: Agent2Result, output_dir: str) -> Dict[str, str]:
+    def export_artifacts(self, result: Agent2Result, output_dir: str):
         """
-        Saves Agent2Result JSON and modular GeoJSON files.
+        Saves Agent 2 outputs to disk.
         """
         os.makedirs(output_dir, exist_ok=True)
         geojson_dir = os.path.join(output_dir, "geojson")
@@ -264,11 +264,20 @@ class Agent2Pipeline:
 
         paths = {}
 
-        # 1. Main JSON result
+        # 1. Main JSON Result
         json_path = os.path.join(output_dir, "agent2_result.json")
         with open(json_path, "w", encoding="utf-8") as f:
             f.write(result.model_dump_json(indent=2))
         paths["result_json"] = json_path
+            
+        # Save Agent2Output system contract
+        try:
+            from contracts.adapters import adapt_to_agent2_output
+            agent2_output = adapt_to_agent2_output(result)
+            with open(os.path.join(output_dir, "Agent2Output.json"), "w") as f:
+                f.write(agent2_output.model_dump_json(indent=2))
+        except ImportError as e:
+            print(f"Warning: Could not save Agent2Output system contract: {e}")
 
         # 2. Unified GeoJSON
         unified_path = os.path.join(output_dir, "agent2_analysis.geojson")

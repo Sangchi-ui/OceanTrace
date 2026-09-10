@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { GlobalNav } from '@/components/GlobalNav'
 
 export const metadata: Metadata = {
   title: 'v0 App',
@@ -40,8 +41,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        {children}
+      <body className="antialiased flex flex-col min-h-screen bg-gray-950">
+        <GlobalNav />
+        <main className="flex-1 flex flex-col relative">
+          {children}
+        </main>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
