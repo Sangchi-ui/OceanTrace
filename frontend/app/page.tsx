@@ -230,6 +230,7 @@ export default function Page() {
                   <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Oil Coverage</dt><dd className="font-medium text-primary">{results.metrics.oil_coverage_percent.toFixed(2)}%</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Mean Confidence</dt><dd className="font-medium">{(results.metrics.mean_confidence * 100).toFixed(1)}%</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Detected Pixels</dt><dd className="font-medium">{results.metrics.oil_pixels.toLocaleString()}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Acquisition Time</dt><dd className="font-medium">{results.metadata?.acquisition_time || 'N/A'}</dd></div>
                 </dl>
               </section>
             )}

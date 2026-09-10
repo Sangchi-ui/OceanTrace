@@ -57,7 +57,28 @@ Agent 2 incorporates the production geospatial, physical oceanography, machine l
 
 ---
 
-## 2. Scientific & Engineering Principles
+## 2. OpenDrift Installation
+
+Agent 2 relies on OpenDrift (OpenOil) for high-fidelity particle transport. Because it has strict spatial library dependencies (netCDF4, GDAL), it must be installed via Conda:
+
+```bash
+# 1. Create the environment
+conda create -n oceantrace python=3.13
+conda activate oceantrace
+
+# 2. Install geospatial system libraries
+conda install -c conda-forge mamba
+mamba install -c conda-forge netcdf4 h5netcdf pyproj pyresample gdal fiona shapely cartopy cmocean xarray dask rasterio pandas numpy scipy matplotlib
+
+# 3. Install OpenDrift
+pip install opendrift
+```
+
+If OpenDrift is unavailable, Agent 2 will gracefully fall back to its internal 4th-order Runge-Kutta (RK4) engine.
+
+---
+
+## 3. Scientific & Engineering Principles
 
 * **Physics First, ML Second**: Drift advection and spreading are driven by physical oceanography (4th-order Runge-Kutta Lagrangian particle dynamics, ocean currents, atmospheric windage, and stochastic eddy diffusion), not black-box neural networks learning physics from scratch.
 * **Two-Stage Hindcasting (No Naive Reverse Physics)**: Reversing stochastic diffusion equations backward in time is mathematically ill-posed. Agent 2 uses **Stage A (Backward Search Envelope)** to establish plausible corridors, followed by **Stage B (Forward Replay of Candidate Origins)** with multi-metric scoring.

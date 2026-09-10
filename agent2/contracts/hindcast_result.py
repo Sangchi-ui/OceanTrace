@@ -104,3 +104,12 @@ class HindcastResult(BaseModel):
     diagnostics: dict[str, Any] = Field(
         default_factory=dict, description="Simulation diagnostics and tuning parameters"
     )
+    animation_frames: list[dict[str, Any]] | None = Field(
+        default=None, description="Frames for backward particle animation"
+    )
+    engine_used: str | None = Field(
+        default=None, description="Physics engine used (rk4_native or opendrift_openoil)"
+    )
+    opendrift_available: bool = Field(
+        default=False, description="Whether OpenDrift was available during run"
+    )

@@ -149,5 +149,20 @@ def build_unified_geojson(
                     "drift_distance_km": hor.drift_distance_km
                 }
             ))
+            
+        # 5. Particle Scatter (Final Frame)
+        if forecast_result.animation_frames and len(forecast_result.animation_frames) > 0:
+            final_frame = forecast_result.animation_frames[-1]
+            if "particles" in final_frame and final_frame["particles"]:
+                features.append(create_feature(
+                    geometry={"type": "MultiPoint", "coordinates": final_frame["particles"]},
+                    properties={
+                        "agent": "agent_2",
+                        "layer": "particle_scatter_geojson",
+                        "forecast_time": final_frame["t"],
+                        "stroke": "#ff6b2b",
+                        "fill": "#ff6b2b"
+                    }
+                ))
 
     return create_feature_collection(features)
