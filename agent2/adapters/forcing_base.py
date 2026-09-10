@@ -44,6 +44,10 @@ class EnvironmentalForcingProvider(ABC):
         )
         return float(u_arr[0]), float(v_arr[0])
 
+    def get_ocean_current(self, lon: float, lat: float, timestamp: datetime) -> Tuple[float, float]:
+        """Alias for get_current."""
+        return self.get_current(lon, lat, timestamp)
+
     def get_wind(self, lon: float, lat: float, timestamp: datetime) -> Tuple[float, float]:
         """Convenience method for a single point query."""
         u_arr, v_arr = self.get_wind_vectors(
@@ -52,6 +56,10 @@ class EnvironmentalForcingProvider(ABC):
             timestamp
         )
         return float(u_arr[0]), float(v_arr[0])
+
+    def get_surface_wind(self, lon: float, lat: float, timestamp: datetime) -> Tuple[float, float]:
+        """Alias for get_wind."""
+        return self.get_wind(lon, lat, timestamp)
 
     def get_sst(self, lon: float, lat: float, timestamp: datetime) -> float:
         """Returns Sea Surface Temperature in degrees Celsius (default 26.0 C)."""

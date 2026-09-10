@@ -1,0 +1,48 @@
+{
+  "dataset_path": "data/drift_trajectories_sample.csv",
+  "total_records": 2500,
+  "train_samples": 2000,
+  "val_samples": 500,
+  "metrics": {
+    "dx_residual": {
+      "mae_meters": 2257.14,
+      "rmse_meters": 3509.57,
+      "r2_score": 0.983
+    },
+    "dy_residual": {
+      "mae_meters": 2309.7,
+      "rmse_meters": 3398.78,
+      "r2_score": 0.9829
+    },
+    "uncertainty_scale": {
+      "mae": 0.0928,
+      "r2_score": 0.9547
+    }
+  },
+  "feature_importance_dx": {
+    "u_current": 0.0127,
+    "v_current": 0.0069,
+    "u_wind": 0.5709,
+    "v_wind": 0.1908,
+    "windage": 0.0154,
+    "sst": 0.0225,
+    "duration_hours": 0.1314,
+    "observed_area_km2": 0.0121,
+    "aspect_ratio": 0.0117,
+    "oil_density": 0.016,
+    "oil_viscosity": 0.0096
+  },
+  "feature_importance_dy": {
+    "u_current": 0.0113,
+    "v_current": 0.0179,
+    "u_wind": 0.1883,
+    "v_wind": 0.5424,
+    "windage": 0.0194,
+    "sst": 0.0177,
+    "duration_hours": 0.1358,
+    "observed_area_km2": 0.0197,
+    "aspect_ratio": 0.0229,
+    "oil_density": 0.0083,
+    "oil_viscosity": 0.0161
+  }
+}

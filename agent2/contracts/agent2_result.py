@@ -37,6 +37,9 @@ class Agent2Result(BaseModel):
     diagnostics: dict[str, Any] = Field(
         default_factory=dict, description="Execution runtimes, particle counts, seed, and quality warnings"
     )
+    ml_residual: dict[str, Any] = Field(
+        default_factory=dict, description="XGBoost physics residual correction and dynamic uncertainty bounds"
+    )
     geojson_collection: dict[str, Any] = Field(
         default_factory=dict, description="Unified GIS-compliant GeoJSON FeatureCollection"
     )

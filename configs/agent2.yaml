@@ -3,10 +3,10 @@ version: "2.0.0"
 
 hindcast:
   enabled: true
-  max_lookback_hours: 48
+  max_lookback_hours: 24
   time_step_hours: 6
   cross_track_samples: 3
-  particles_per_candidate: 150
+  particles_per_candidate: 50
   timestep_minutes: 20.0
 
 forecast:
@@ -15,9 +15,9 @@ forecast:
     - 6
     - 12
     - 24
-  particle_count: 500
-  ensemble_size: 15
-  timestep_minutes: 15.0
+  particle_count: 100
+  ensemble_size: 5
+  timestep_minutes: 20.0
 
 simulation:
   integration_method: "rk4"  # 'rk4' or 'euler'

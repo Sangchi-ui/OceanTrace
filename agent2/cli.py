@@ -78,7 +78,15 @@ def main():
             print(f"+{hor.horizon_hours:02d}h Forecast: Centroid ({hor.centroid[0]:.4f}, {hor.centroid[1]:.4f}), "
                   f"Spread Area: {hor.spread_area_km2:.2f} km^2, Drift: {hor.drift_distance_km:.2f} km")
 
+    if result.ml_residual:
+        print("\n--- XGBOOST ML RESIDUAL CALIBRATION (MANDATORY) ---")
+        print(f"Residual dX:         {result.ml_residual.get('dx_residual_meters', 0.0)} meters")
+        print(f"Residual dY:         {result.ml_residual.get('dy_residual_meters', 0.0)} meters")
+        print(f"Uncertainty Scale:   {result.ml_residual.get('uncertainty_scale', 1.0):.3f}x")
+
     print(f"\nArtifacts exported to: '{args.output}/'")
+    print(f"  - GeoJSON: {os.path.join(args.output, 'geojson')}/")
+    print(f"  - PostGIS: {os.path.join(args.output, 'postgis')}/ (DDL Schema & Insert SQL)")
     print("="*60 + "\n")
 
 

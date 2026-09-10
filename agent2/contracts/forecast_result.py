@@ -49,6 +49,22 @@ class ForecastHorizonResult(BaseModel):
             return v.replace(tzinfo=timezone.utc)
         return v.astimezone(timezone.utc)
 
+    @property
+    def uncertainty_radius_km(self) -> float:
+        return self.ensemble_spread_std_km
+
+    @property
+    def target_timestamp(self) -> datetime:
+        return self.forecast_timestamp
+
+    @property
+    def area_km2_core_50(self) -> float:
+        return round(self.spread_area_km2 * 0.5, 2)
+
+    @property
+    def area_km2_spread_90(self) -> float:
+        return self.spread_area_km2
+
 
 class ForecastResult(BaseModel):
     """

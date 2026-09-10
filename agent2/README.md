@@ -38,7 +38,26 @@ Agent 2 is the trajectory, hindcasting, and forecasting intelligence component o
 
 ---
 
-## 1. Scientific & Engineering Principles
+## 1. Full Tech Stack Integration
+
+Agent 2 incorporates the production geospatial, physical oceanography, machine learning, and database stack:
+
+| Technology | Role & Implementation in Agent 2 |
+| :--- | :--- |
+| **Python** | Core runtime (Python 3.13+, typed Pydantic v2 data contracts, modular object-oriented architecture). |
+| **OpenDrift / OpenOil** | Physics-first trajectory modeling, Stokes drift, oil weathering formulations, and fallback orchestration (`agent2/physics/opendrift_wrapper.py`). |
+| **CMEMS** | Copernicus Marine Service hydrodynamic currents ($u, v$) and Sea Surface Temperature (SST) integration (`agent2/adapters/cmems_adapter.py`). |
+| **ERA5 / NOAA GFS** | Atmospheric 10m surface winds ($u_{10}, v_{10}$) from ECMWF ERA5 reanalysis and NOAA GFS operational forecasts (`agent2/adapters/era5_adapter.py`, `agent2/adapters/noaa_gfs_adapter.py`). |
+| **Xarray / NetCDF** | Multidimensional climate and oceanographic dataset ingestion, 4D spatial-temporal coordinate slicing and interpolation. |
+| **NumPy / SciPy** | Vectorized 4th-order Runge-Kutta (RK4) particle transport, Gaussian diffusion, KDTree nearest-neighbor queries, and scoring metrics. |
+| **GeoPandas / Shapely** | Geodesic transformations, polygon buffer operations, spatial convex/concave hulls, and GIS-compliant GeoJSON export (`agent2/geospatial/`). |
+| **XGBoost (Mandatory)** | **Mandatory Physics Residual Calibration**: Gradient-boosted regressor predicting physical drift residuals ($dx, dy$) and scaling dynamic uncertainty bounds based on wind, current, SST, and oil properties (`agent2/ml/xgboost_residual.py`). |
+| **PostgreSQL / PostGIS** | Enterprise spatial database persistence: SQLAlchemy/GeoAlchemy2 models, automated PostGIS DDL generation (`CREATE EXTENSION postgis;`, `GEOMETRY(POLYGON, 4326)`), GIST indexes, and SQL migration/insert export (`agent2/storage/postgis_adapter.py`). |
+| **FastAPI** | High-performance asynchronous REST API exposing `/analyze`, `/analyze-file`, `/health`, and `/postgis/schema` (`agent2/api/routes.py`). |
+
+---
+
+## 2. Scientific & Engineering Principles
 
 * **Physics First, ML Second**: Drift advection and spreading are driven by physical oceanography (4th-order Runge-Kutta Lagrangian particle dynamics, ocean currents, atmospheric windage, and stochastic eddy diffusion), not black-box neural networks learning physics from scratch.
 * **Two-Stage Hindcasting (No Naive Reverse Physics)**: Reversing stochastic diffusion equations backward in time is mathematically ill-posed. Agent 2 uses **Stage A (Backward Search Envelope)** to establish plausible corridors, followed by **Stage B (Forward Replay of Candidate Origins)** with multi-metric scoring.
@@ -127,17 +146,42 @@ Default weights in [configs/agent2.yaml](file:///d:/PROJECTS/OceanTrace/configs/
 ```bash
 # Run both Hindcast and Forecast from an Agent 1 output
 python -m agent2.cli \
-    --input outputs/spill_event.json \
+    --input outputs/sample_spill_event.json \
     --output outputs/agent2_results \
     --mode both \
     --config configs/agent2.yaml
 
 # Run Forecast only
 python -m agent2.cli \
-    --input outputs/spill.geojson \
+    --input outputs/sample_spill_event.json \
     --output outputs/forecast_only \
     --mode forecast
 ```
+
+### Training the XGBoost Physics Residual Model
+
+To train or fine-tune Agent 2's XGBoost models on drift trajectory / buoy tracking datasets:
+
+```bash
+# 1. Generate or prepare a trajectory dataset (CSV or Parquet)
+python -m agent2.ml.generate_drift_dataset --samples 2500 --output data/drift_trajectories_sample.csv
+
+# 2. Train XGBoost models on the dataset
+python -m agent2.ml.train_xgboost \
+    --data data/drift_trajectories_sample.csv \
+    --output models/agent2 \
+    --estimators 150 \
+    --depth 5 \
+    --lr 0.05
+```
+
+This trains and exports:
+* `models/agent2/xgb_dx_residual.json` ($dx$ physical displacement residual model)
+* `models/agent2/xgb_dy_residual.json` ($dy$ physical displacement residual model)
+* `models/agent2/xgb_uncertainty.json` (dynamic uncertainty scaling model)
+* `models/agent2/metrics.json` (validation MAE, RMSE, $R^2$ scores, and feature importances)
+
+When `Agent2Pipeline` runs, it automatically loads these models from `models/agent2/`.
 
 ### Python API
 

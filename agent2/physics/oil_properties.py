@@ -28,6 +28,10 @@ class OilProperties(BaseModel):
     horizontal_diffusivity_m2_s: float = Field(default=2.5, description="Horizontal eddy diffusivity coefficient D_h")
     evaporation_half_life_hours: float = Field(default=36.0, description="Approximate evaporation half-life in hours")
 
+    @property
+    def wind_drift_factor(self) -> float:
+        return self.default_windage
+
 
 # Standardized scenario definitions
 OIL_SCENARIOS: Dict[OilCategory, OilProperties] = {

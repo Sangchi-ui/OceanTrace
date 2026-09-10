@@ -16,6 +16,8 @@ from agent2.contracts.agent2_result import Agent2Result
 from agent2.pipeline import Agent2Pipeline
 from agent2.errors import Agent2Error
 
+from agent2.storage.postgis_adapter import PostGISStorage
+
 agent2_router = APIRouter(tags=["Agent 2 - Hindcasting & Forecasting"])
 
 
@@ -25,8 +27,24 @@ def agent2_health():
         "status": "healthy",
         "agent": "Agent 2 - Hindcasting & Forecasting",
         "version": "2.0.0",
-        "physics_engine": "Lagrangian Transport (RK4 / OpenDrift)"
+        "techstack": {
+            "core": "Python",
+            "drift_physics": "Lagrangian Transport (RK4 / OpenDrift/OpenOil)",
+            "ocean_forcing": "CMEMS (Xarray / NetCDF)",
+            "atmospheric_forcing": "ERA5 / NOAA GFS (Xarray / NetCDF)",
+            "scientific_compute": "NumPy / SciPy",
+            "spatial_processing": "GeoPandas / Shapely",
+            "machine_learning": "XGBoost (Mandatory Residual & Uncertainty Calibration)",
+            "spatial_database": "PostgreSQL / PostGIS (GeoAlchemy2)",
+            "api_framework": "FastAPI"
+        }
     }
+
+
+@agent2_router.get("/postgis/schema", summary="Export PostGIS Schema DDL")
+def get_postgis_schema():
+    """Returns the standard PostgreSQL / PostGIS spatial table DDL script."""
+    return {"ddl_sql": PostGISStorage.generate_ddl_sql()}
 
 
 @agent2_router.post(
