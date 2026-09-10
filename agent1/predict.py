@@ -241,6 +241,15 @@ def run_inference(
     with open(os.path.join(output_dir, "spill.geojson"), "w") as f:
         json.dump(geojson_data, f, indent=2)
 
+    # Save system contract Agent1Output
+    try:
+        from contracts.adapters import adapt_to_agent1_output
+        agent1_output = adapt_to_agent1_output(spill_event, prob_map)
+        with open(os.path.join(output_dir, "Agent1Output.json"), "w") as f:
+            f.write(agent1_output.model_dump_json(indent=2))
+    except ImportError as e:
+        print(f"Warning: Could not save Agent1Output system contract: {e}")
+
     # Save Visualization Overlay
     original_img, _ = preprocessor.read_raster(input_image_path)
     visualize_pipeline_results(

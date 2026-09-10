@@ -37,8 +37,12 @@ class Agent1Adapter:
         # Check if it's a FeatureCollection (spill.geojson format)
         if data.get("type") == "FeatureCollection":
             return cls._from_geojson_collection(data, feature_index=region_index)
+            
+        # Check if it's the Agent1Output system contract format
+        if "detection" in data and "geometry" in data and "observation" in data:
+            return cls._from_system_contract(data)
 
-        # Otherwise assume it is a SpillEvent structure
+        # Otherwise assume it is an internal SpillEvent structure
         return cls._from_spill_event_dict(data, region_index=region_index)
 
     @classmethod
@@ -225,6 +229,40 @@ class Agent1Adapter:
             confidence=float(props.get("confidence", 0.8)),
             crs=props.get("crs", "EPSG:4326"),
             raw_metadata=props
+        )
+
+    @classmethod
+    def _from_system_contract(cls, data: Dict[str, Any]) -> SpillObservation:
+        """Parses the explicit Agent1Output system contract format."""
+        geom_dict = data.get("geometry", {})
+        obs = data.get("observation", {})
+        det = data.get("detection", {})
+        
+        poly_geojson = geom_dict.get("polygon_geojson")
+        if not poly_geojson:
+            raise GeometryValidationError("Missing polygon_geojson in Agent1Output system contract.")
+            
+        lon = geom_dict.get("centroid", {}).get("longitude")
+        lat = geom_dict.get("centroid", {}).get("latitude")
+        
+        area_km2 = geom_dict.get("area_km2")
+        
+        time_str = obs.get("acquisition_time") or datetime.now(timezone.utc).isoformat()
+        obs_time = cls._parse_timestamp_to_utc(time_str)
+        
+        return SpillObservation(
+            spill_id=str(data.get("event_id", "SPILL_EVENT_000")),
+            observation_timestamp=obs_time,
+            geometry=poly_geojson,
+            centroid=(round(float(lon), 6), round(float(lat), 6)),
+            area_km2=round(float(area_km2), 4),
+            perimeter_km=geom_dict.get("perimeter_km"),
+            confidence=float(det.get("overall_confidence", 0.5)),
+            crs=obs.get("crs", "EPSG:4326"),
+            source_satellite=str(obs.get("sensor", "Sentinel-1")),
+            source_sensor=str(obs.get("sensor", "SAR")),
+            source_image_path=obs.get("source_image"),
+            raw_metadata=data
         )
 
     @staticmethod
