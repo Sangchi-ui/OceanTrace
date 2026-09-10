@@ -5,7 +5,7 @@ Executes multi-horizon forward dispersion simulations with ensemble perturbation
 
 from datetime import datetime, timedelta
 import math
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
 from agent2.adapters.forcing_base import EnvironmentalForcingProvider

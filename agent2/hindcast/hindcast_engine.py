@@ -6,6 +6,7 @@ scoring (Stage C), and probable origin region estimation (Stage D).
 
 from typing import Any, Dict, Optional
 import time
+from datetime import timedelta
 
 from agent2.adapters.forcing_base import EnvironmentalForcingProvider
 from agent2.contracts.hindcast_result import HindcastResult

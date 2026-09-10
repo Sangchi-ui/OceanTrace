@@ -109,6 +109,11 @@ def adapt_to_agent2_output(agent2_result: Any) -> Agent2Output:
     po = h.get("probable_origin", {})
     
     # Map origin
+    def to_iso(dt: Any) -> str:
+        if isinstance(dt, datetime):
+            return dt.isoformat()
+        return str(dt) if dt else ""
+
     origin_estimation = OriginEstimation(
         probable_origin_region=po.get("polygon", {}),
         origin_centroid=Centroid(
@@ -116,8 +121,8 @@ def adapt_to_agent2_output(agent2_result: Any) -> Agent2Output:
             latitude=po.get("centroid", [0.0, 0.0])[1] if po.get("centroid") else 0.0
         ),
         origin_time_window=OriginTimeWindow(
-            start=po.get("time_window_start", ""),
-            end=po.get("time_window_end", "")
+            start=to_iso(po.get("time_window_start", "")),
+            end=to_iso(po.get("time_window_end", ""))
         ),
         origin_probability=po.get("confidence", 0.0)
     )
@@ -170,7 +175,7 @@ def adapt_to_agent2_output(agent2_result: Any) -> Agent2Output:
         current_source=env.get("currents", "unknown"),
         wind_source=env.get("wind", "unknown"),
         wave_source=None,
-        data_timestamp=res.get("execution_timestamp", "")
+        data_timestamp=to_iso(res.get("execution_timestamp", ""))
     )
     
     return Agent2Output(

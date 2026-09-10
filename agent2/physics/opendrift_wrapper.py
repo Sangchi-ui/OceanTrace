@@ -4,9 +4,9 @@ Detects installed OpenDrift environment and coordinates with internal transport 
 Ensures graceful fallback and adherence to the OceanTrace architecture.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
-from typing import Any, Dict, Optional, Tuple, List
+from typing import Optional, List
 
 import numpy as np
 
@@ -19,9 +19,8 @@ from agent2.physics.simulation_output import SimulationOutput, ParticleFrame, We
 logger = logging.getLogger("OceanTrace.Agent2.OpenDriftWrapper")
 
 try:
-    import opendrift
-    from opendrift.models.openoil import OpenOil
-    from opendrift.readers.basereader import BaseReader, ContinuousReader
+    from opendrift.models.openoil import OpenOil  # type: ignore
+    from opendrift.readers.basereader import ContinuousReader  # type: ignore
     OPENDRIFT_AVAILABLE = True
 except ImportError:
     OPENDRIFT_AVAILABLE = False
@@ -77,28 +76,7 @@ class OpenDriftEngineWrapper:
         Returns a unified SimulationOutput object.
         """
         if not self.opendrift_available:
-            # Fallback to internal native engine
-            snapshots = self.internal_engine.simulate(
-                cloud=cloud,
-                start_time=start_time,
-                end_time=end_time,
-                record_interval_minutes=60.0,
-                apply_diffusion=apply_diffusion,
-                reverse=reverse
-            )
-            frames = []
-            for state in cloud.history:
-                frames.append(ParticleFrame(
-                    timestamp=state.timestamp,
-                    lons=state.lons.tolist(),
-                    lats=state.lats.tolist(),
-                    active=state.active.tolist()
-                ))
-            return SimulationOutput(
-                frames=frames,
-                engine_used="rk4_native",
-                weathering_timeseries=None
-            )
+            return self._run_native_fallback(cloud, start_time, end_time, apply_diffusion, reverse)
 
         # OpenDrift Implementation
         o = OpenOil(loglevel=30)
@@ -148,7 +126,12 @@ class OpenDriftEngineWrapper:
         
         # Extract results into SimulationOutput
         history = o.history
-        time_steps = o.get_time_array()
+        
+        time_array_res = o.get_time_array()
+        if isinstance(time_array_res, tuple):
+            time_steps = time_array_res[0]
+        else:
+            time_steps = time_array_res
         
         frames = []
         for i, t in enumerate(time_steps):
@@ -182,7 +165,7 @@ class OpenDriftEngineWrapper:
         )
 
     def _run_native_fallback(self, cloud, start_time, end_time, apply_diffusion, reverse) -> SimulationOutput:
-        self.internal_engine.simulate(
+        snapshots = self.internal_engine.simulate(
             cloud=cloud,
             start_time=start_time,
             end_time=end_time,
@@ -190,12 +173,18 @@ class OpenDriftEngineWrapper:
             apply_diffusion=apply_diffusion,
             reverse=reverse
         )
-        frames = [ParticleFrame(
-            timestamp=state.timestamp,
-            lons=state.lons.tolist(),
-            lats=state.lats.tolist(),
-            active=state.active.tolist()
-        ) for state in cloud.history]
+        frames = []
+        for i, state in enumerate(cloud.history):
+            if i < len(snapshots):
+                t = snapshots[i][0]
+            else:
+                t = end_time
+            frames.append(ParticleFrame(
+                timestamp=t,
+                lons=state[0].tolist(),
+                lats=state[1].tolist(),
+                active=cloud.active.tolist()
+            ))
         return SimulationOutput(
             frames=frames,
             engine_used="rk4_native",
